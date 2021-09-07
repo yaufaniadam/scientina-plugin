@@ -151,6 +151,13 @@ function registrasi()
         // send an email to the admin
         wp_new_user_notification($user_id);
 
+        //kirim email ke user yg register
+        $subject = 'Pendaftaran di Scientina Skill';
+        $body = 'Selamat, Anda telah terdaftar di situs Scientinaskill.com';
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        
+        wp_mail( sanitize_text_field($email), $subject, $body, $headers );
+
         wp_set_current_user($user_id);
         wp_set_auth_cookie($user_id);      
       }       
