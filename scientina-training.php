@@ -16,18 +16,14 @@ require_once('inc/shortcode.php');
 require_once('inc/coupon.php');
 require_once('inc/midtrans-php/Midtrans.php');
 
-// require 'update-checker/plugin-update-checker.php';
-// $myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
-//     'https://solusidesain-update-theme.netlify.app/scientina/theme.json',
-//     __FILE__, //Full path to the main plugin file or functions.php.
-//     'scientina'
-// );
+require 'update-checker/plugin-update-checker.php';
+$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
+    'https://solusidesain-update-theme.netlify.app/scientina/plugin.json',
+    __FILE__, //Full path to the main plugin file or functions.php.
+    'scientina'
+);
 
-// $likes = get_option( 'jsforwp_likes' );
-// if ( null == $likes  ) {
-//   add_option( 'jsforwp_likes', 0 );
-//   $likes = 0;
-// }
+
 
 function jsforwp_frontend_scripts()
 {
@@ -195,68 +191,19 @@ function registrasi()
 
         // Insert the post into the database.
         $result = wp_insert_post($data_order);
-/*
-        if($result) {
 
+        if($result) {
           $total_harga = $field["harga"]*$field["jml_peserta"];
 
           add_post_meta($result, 'jml_peserta', $field['jml_peserta'], true);
           add_post_meta($result, 'total_harga', $total_harga, true);
           add_post_meta($result, 'training', $query['ID'], true);
-
-          $nonce = wp_create_nonce( 'scajax_nonce' );
-          
-          $html = '';
-          $html .= '<h5>Pesanan Anda</h5>';
-          $html .= "<p>Masukkan Nama Peserta</p>";
-          $html .=  '<form action="" method="POST" class="form_checkout">';
-          $html .=  '<input type="hidden" name="nonce" value="'. $nonce .'">';
-          $html .=  '<input type="hidden" name="total_harga" id="total_harga" value="'. $total_harga .'">';
-          $html .=  '<input type="hidden" name="jml_peserta" id="jml_peserta" value="'. $field["jml_peserta"] .'">';
-          for ($i = 1; $i <= $field["jml_peserta"]; $i++) {
-            $html .= '<div class="mb-3 row">
-                  <label for="nama peserta" class="col-sm-4 col-form-label">Nama Peserta*</label>
-                  <div class="col-sm-8">
-                    <input type="text" name="peserta'.$i.'" class="form-control"  value="" required>
-                    <span class="invalid-feedback error peserta' . $i. '_empty d-block"></span>
-                  </div>
-                </div>';
-          }
-          $html .='<div class="mb-3 row">
-              <label for="nama peserta" class="col-sm-4 col-form-label">Punya kupon?</label>
-              <div class="col-sm-8">    
-                <div class="input-group mb-3">              
-                  <input type="text" class="form-control" name="coupon" id="kode_kupon" style="width:100px !important;">
-                  <span class="btn btn-warning" type="button" id="cek_kupon">
-                  Cek Kupon</span>
-                  <span class="invalid-feedback message_kupon d-block" ></span>
-                </div>
-              </div>
-            </div>';
-
-          $html .= "<p><strong>" . $query["post_title"] . "</strong><br>             
-              Rp</span> " . number_format($field["harga"]) . " x " . $field["jml_peserta"] . " = Rp <span class='harga_asli'><span class='tru'></span>" . number_format($total_harga) . "</span> &nbsp;<span class='harga_baru'></span>                      
-            </p>";
-          $html .= "<input type='hidden' id='training_id' name='training_id' value='". $query["ID"] ."'>";
-          $html .= "<input type='hidden' id='training_title' name='training_title' value='". $query["post_title"] ."'>";
-          $html .= "<input type='hidden' id='harga_diskon' name='harga_diskon' value=''>";
-          $html .= "<input type='hidden' name='submitted' value='checkout'>
-              <hr style='border-top:1px solid white; padding:10px 0;'>
-              <p><button type='submit' class='button button_beli btn btn-warning' id='button_checkout'>
-                  <span class='spinner-border text-light spinner-border-sm d-none' role='status' aria-hidden='true'></span>
-                      <span class='visually-hidden'>Loading...</span>
-              Konfirmasi Pesanan</button></p>";  
-          $html .= "</form>"; 
-          $response['html'] = $html;
-
+          add_post_meta($result, 'status_bayar', 'tambah_peserta', true);
         }
-*/
-        
+   
   }
   
   $response['error'] = $error;
-  // $response['jml_peserta'] = $field['jml_peserta'];
-  // $response['isi'] = $field['submitted'];
   $response['type'] = 'success';
   $response['redir'] = urldecode($field['url']);
   $response = json_encode($response);
@@ -291,6 +238,7 @@ function checkout()
     $field[urldecode($id_field[0])] = urldecode($id_field[1]);
   }
 
+
   if ($field['submitted'] == 'checkout') {
 
     for ($i = 1; $i <= $field['jml_peserta']; $i++) {
@@ -312,16 +260,19 @@ function checkout()
       for ($i = 1; $i <= $field['jml_peserta']; $i++) {
         $data_peserta = array(
             'post_title'    => $field['peserta' . $i],
-            'post_status'   => 'pending',
+            'post_status'   => 'draft',
             'post_author'   => get_current_user_id(),
             'post_type'   => 'participant',
         );
 
         // Insert the post into the database.
         $users[] .= wp_insert_post($data_peserta);
+        add_user_meta( $users, 'order', $field['training_id']);
+
       }
 
       $data_order = array(
+        'ID'    =>  $field['training_id'],
         'post_title'    =>  $field['training_title'],
         'post_status'   => 'pending',
         'post_author'   => get_current_user_id(),
@@ -329,140 +280,127 @@ function checkout()
       );
 
       // Insert the post into the database.
-      $result = wp_insert_post($data_order);
+      $result = wp_update_post($data_order);
 
       if ($result && !is_wp_error($result)) {
-        $post_id = $result;
-        add_post_meta($post_id, 'training', $field['training_id'], true);
+        $post_id = $field['training_id'];
         add_post_meta($post_id, 'participant', $users, true);
-        add_post_meta($post_id, 'total_harga', $field['total_harga'], true);
         add_post_meta($post_id, 'harga_diskon', $field['harga_diskon'], true);
-        add_post_meta($post_id, 'jml_peserta', $field['jml_peserta'], true);
         add_post_meta($post_id, 'kode_kupon', $field['coupon'], true);
+        update_field( 'status_bayar', 'belum_bayar', $result);
       }
+
       $error = 'noerror';
     } else {
-      $error = 'error';
+      $response['error'] = 'error';
       $response['error_code'] = $errors;
-    }/* empty error */
+    } // empty error 
   }
 
-  $response['redir'] = get_bloginfo('url') ."/proses-bayar";
-  $response['error'] = $error;
+  $response['redir'] = urldecode($field['url']);
+  $response['type'] = 'success';
+  $response = json_encode($response);
+  echo $response;
+  die();
+}
+//////////////////////
+///    TRANSAKSI   ////
+//////////////////////
+
+add_action('wp_ajax_transaksi', 'transaksi');
+add_action('wp_ajax_nopriv_transaksi', 'transaksi');
+function transaksi()
+{
+  check_ajax_referer('scajax_nonce');
+  $order_id = $_POST['order_id']; //order id di WP
+   $result = $_POST['result'];
+  $kode_transaksi = $_POST['kode_transaksi'];
+  if($kode_transaksi == 200) {
+
+    update_field( 'status_bayar', 'lunas', $order_id);
+    update_field( 'transaction_id', $result['transaction_id'], $order_id);
+    update_field( 'order_id', $result['order_id'], $order_id);
+    update_field( 'transaction_time', $result['transaction_time'], $order_id);
+    update_field( 'bank', $result['bank'], $order_id);
+    update_field( 'payment_type', $result['payment_type'], $order_id);
+    update_field( 'status_code', $result['status_code'], $order_id);
+    update_field( 'jumlah_bayar', $result['gross_amount'], $order_id);
+  }
+  
+  $response['order_id'] = $order_id;
+  $response['result'] = $result;
   $response['type'] = 'success';
   $response = json_encode($response);
   echo $response;
   die();
 }
 
-add_shortcode('proses_bayar', 'proses_bayar');
-function proses_bayar()
-{
-    $user = wp_get_current_user();
+function get_midtrans($transaksi) {
 
-    // if (isset($_POST['submitted']) && isset($_POST['post_nonce_field']) && wp_verify_nonce($_POST['post_nonce_field'], 'post_nonce')) {
+  $user = wp_get_current_user();
 
-    //     if ($_POST['submitted'] == 'bayar') {            
+  \Midtrans\Config::$serverKey = 'SB-Mid-server-xBzp5AlUuPmVau-HsWkVjNLS';
+  \Midtrans\Config::$isSanitized = true;
+  \Midtrans\Config::$is3ds = true;
 
-            \Midtrans\Config::$serverKey = 'SB-Mid-server-nfg_ilmmRSPvnW3RSa_DymDW';
-            \Midtrans\Config::$isSanitized = true;
-            \Midtrans\Config::$is3ds = true;
+  $jml_peserta = $transaksi['jml_peserta'];
+  $harga =  $transaksi['total_harga'];
+  $post_id =  $transaksi['post_id'];
 
-            $jml_peserta = get_post_meta($result, 'jml_peserta', true);
-            $harga = get_post_meta($result, 'harga', true);
+  $transaction_details = array(
+    'order_id' => rand(),
+    'gross_amount' => $harga,
+  );
 
-            $transaction_details = array(
-                'order_id' => rand(),
-                'gross_amount' => $harga,
-            );
+  $item_details = array(
+   'id' => $post_id,
+    'price' => $harga,
+    'quantity' => 1,
+    'name' => $transaksi['post_title']
+  );
 
-            $item_details = array(
-                'id' => $post_id,
-                'price' => $harga,
-                'quantity' => $jml_peserta,
-                'name' => $order["post_title"]
-            );
+  $item_details = array($item_details);
 
-            $item_details = array($item_details);
+  $customer_details = array(
+    'first_name' => $user->display_name,
+    'last_name' => '',
+    'email' => $user->user_email,
+    'phone' => get_user_meta($user->ID,'telp',true),
+    'billing_address' => '',
+    'shipping_address' => ''
+  );
 
-            $customer_details = array(
-                'first_name' => $user->display_name,
-                'last_name' => '',
-                'email' => $user->user_email,
-                'phone' => '08562563456',
-                'billing_address' => '',
-                'shipping_address' => ''
-            );
+  $enable_payments = array(
+    "credit_card",
+    "gopay",
+    "permata_va",
+    "bca_va",
+    "bni_va",
+    "echannel",
+    "other_va",
+    "danamon_online",
+    "mandiri_clickpay",
+    "cimb_clicks",
+    "bca_klikbca",
+    "bca_klikpay",
+    "bri_epay",
+    "xl_tunai",
+    "indosat_dompetku",
+    "kioson",
+    "Indomaret",
+    "alfamart",
+    "akulaku"
 
-            $enable_payments = array('mandiri_clickpay', 'credit_card');
+  );
 
-            $transaction = array(
-                'enabled_payments' => $enable_payments,
-                'transaction_details' => $transaction_details,
-                'customer_details' => $customer_details,
-                'item_details' => $item_details
-            );
+  $transaction = array(
+    'enabled_payments' => $enable_payments,
+    'transaction_details' => $transaction_details,
+    'customer_details' => $customer_details,
+    'item_details' => $item_details
+  );
 
-            $snapToken = \Midtrans\Snap::getSnapToken($transaction);
+  return $snapToken = \Midtrans\Snap::getSnapToken($transaction);
 
-            $cart = '';
-
-            $cart .= '<h5><strong>Pesanan Anda</strong></h5>';
-
-            $cart .= "<table class='cart'><thead><tr><th>Training</th><th>Nama Peserta</th><th>Total</th><th>&nbsp;</th><tr></thead>";
-            $cart .= "<tr>       
-                <td>" . $order["post_title"] . "</td>
-                <td><ol>" . $pst . "</ol></td>
-                <td style='text-align:right;'><span style='float:left;'>Rp</span> " . number_format(get_post_meta($result, 'total_harga', true), 2) . " </td>     
-                <td style='text-align:center;'><button id='pay-button' style='background:#f4511e; border-radius:5px;'>Bayar</button></td>      
-                <tr>
-            ";
-
-            $cart .= "</table>";
-
-            $cart .= '
-            <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-NUHDTW6uipcvE7sz"> </script>
-            <script
-            src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
-            integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
-            crossorigin="anonymous"></script>
-            <script type="text/javascript"> 
-                $("#pay-button").on("click", function() {                 
-                    snap.pay("' . $snapToken . '", {
-                        onSuccess: function(result){
-                        document.getElementById("result-json").innerHTML += JSON.stringify(result, null, 2)
-                        },
-                        onPending: function(result) {
-                        document.getElementById("result-json").innerHTML += JSON.stringify(result, null, 2)
-                        },
-                        onError: function(result) {
-                        document.getElementById("result-json").innerHTML += JSON.stringify(result, null, 2)
-                        }
-                    });
-                });            
-            </script>';
-
-            echo $cart;
-    //     } 
-    // }
-}
-
-function panggil_midtrans() {
-
-  echo "midtrans di sini";
-
-  
-}
-
-
-add_action('wp_ajax_test', 'test');
-add_action('wp_ajax_nopriv_test', 'test');
-function test()
-{
-  
-  check_ajax_referer('scajax_nonce');
-
-  echo "<h3>Isi data Pengguna</h3>";
-  
 }
 

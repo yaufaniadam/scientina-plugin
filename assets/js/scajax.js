@@ -74,21 +74,26 @@
         beforeSend: function ( xhr ) {
           console.log('Loading ...')
           $('#cek_kupon .spinner-border').removeClass('d-none');
-          $('.form-control').removeClass('is-invalid');
+          $('.form-control').removeClass('is-invalid');         
         },
         success: function( response ) {
            if( 'success' == response.type ) {
              if(response.valid==1) {                 
               $('#harga_diskon').val(response.subtotal);
-              $('.harga_asli').wrap("<strike>");
-              $('.harga_baru').prepend(response.subtotal_nf);
+              $('.harga_baru').removeClass('d-none');
+              $('.harga_asli .tru').addClass('d-block');
+              $('.harga_baru').html(response.subtotal_nf);
               $('.message_kupon').addClass('text-warning');
               $('.message_kupon').html(response.message);  
               $( "#cek_kupon" ).prev(".form-control").addClass("is-valid");   
+              $( "#cek_kupon" ).hide();   
               } else {
                 $('.message_kupon').removeClass('text-warning');
                 $('.message_kupon').html(response.message);           
-                $( "#cek_kupon" ).prev(".form-control").addClass("is-invalid");   
+                $( "#cek_kupon" ).prev(".form-control").addClass("is-invalid"); 
+                $('.harga_asli .tru').removeClass('d-block');
+                $('#harga_diskon').val('');
+                $('.harga_baru').addClass('d-none');
               }           
            }
            else {
@@ -118,7 +123,6 @@
 
     var form_checkout = $('.form_checkout').serialize();
 
-    alert()
     e.preventDefault();
 
     // if(kupon != '') {
@@ -139,19 +143,20 @@
         success: function( response ) {
            if( 'success' == response.type ) {
 
-               console.log(response)
-
                if(response.error == 'error') { 
 
                 var counter = 1;           
                 jQuery.each( response.error_code, function( i, val ) {                 
                   $( ".error." + i ).append( document.createTextNode( val ) );
-                  counter++;
+                  $( ".error." + i ).removeClass('d-none');
+                  $( ".error." + i ).addClass('d-block');
+
+                   counter++;
                 });
-              } else {                
-                         
-                $('#bayar-midtrans').show();           
-                
+              } else {                        
+               
+                console.log('noerror')      
+                $(location).attr('href',response.redir);
               }
 
            }
@@ -167,10 +172,7 @@
           $('#button_checkout .spinner-border').addClass('d-none');
         },0);
       })
-    // }  else {
-    //   alert('Masukkan kode kupon ')
-    // }
-
+   
   } );
 
 

@@ -172,7 +172,7 @@ function create_post_types_participant()
     'labels'       => $label,
     'description'     => __('All Participant upload here', 'scientina'),
     'public'       => true,
-    'supports'      => array('title', 'editor', 'thumbnail'),
+    'supports'      => array('title', 'thumbnail'),
     'query_var'     => true,
     'rewrite'       => array('slug' => 'participant'),
     'menu_icon'      => 'dashicons-businessman',

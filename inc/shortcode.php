@@ -16,28 +16,31 @@ function button_beli()
 
     if (!is_user_logged_in()) { 
 
-        $form .= '<div id="load"><form action="' . $url . '" method="POST" class="pendaftaran"><input type="text" name="url" id="url" class="" value="'. get_the_permalink() .'">';
+        $form .= '<div id="load" class="p-2">
+        <form action="' . $url . '" method="POST" class="pendaftaran p-3">
+        <h5 class="text-center">Beli Program Ini</h5>
+        <input type="hidden" name="url" id="url" class="" value="'. get_the_permalink() .'">';
 
         $form .= '<p style="text-align:center;"><a href="' . esc_url(wp_login_url(get_permalink() . '/?training_id='.  get_the_ID())) . '">Login disini </a>jika sudah terdaftar.</p>';
 
         $form .= "<div id='daftar_error'><span class='alert alert-danger d-block'>Error! Periksa kembali.</span></div>";
         
         $form .= ' 
-        <div class="form-group row">
+        <div class="row mb-2">
             <label for="email" class="col-sm-4 col-form-label">Email*</label>
             <div class="col-sm-8">
                 <input type="text" name="email" id="email" class="form-control" value="">
                 <span class="invalid-feedback error email_empty email_invalid email_used"></span>
             </div>
         </div>
-        <div class="form-group row">
+        <div class="row mb-2">
             <label for="password" class="col-sm-4 col-form-label">Password*</label>
             <div class="col-sm-8">
                 <input type="password" name="password" id="password" class="form-control" value="">
                 <span class="invalid-feedback error password_thooshort password_empty"></span>
             </div>
         </div>
-        <div class="form-group row">
+        <div class="row mb-2">
             <label for="telp" class="col-sm-4 col-form-label">Telp/WA* </label>
             <div class="col-sm-8">
                 <input type="text" name="telp" id="telp" class="form-control" value="" placeholder="Contoh : 085612344567">
@@ -47,7 +50,7 @@ function button_beli()
 
         $form .= "<input type='hidden' name='submitted' value='daftar'>";     
         
-        $form .= '<div class="form-group row">
+        $form .= '<div class="row">
             <label for="jml_peserta" class="col-sm-4 col-form-label">Jumlah Peserta* </label>
             <div class="col-sm-8">
                 <input type="number" name="jml_peserta" id="jml_peserta" class="form-control" value="1" min="1" value="1">
@@ -57,7 +60,7 @@ function button_beli()
         $form .= '<input type="hidden" name="harga" id="harga" value="' . get_field('harga', get_the_ID()) . '" />';
         $form .= '<input type="hidden" name="post_id" id="post_id" value="' . get_the_ID() . '" />'; 
         $form .= '<div class="form-group row mt-3">
-                <label for="button" class="col-sm-4 col-form-label">&nbsp;</label>
+                <label for="button" class="col-sm-4 col-form-label d-none d-sm-block">&nbsp;</label>
                 <div class="col-sm-8">
                     <button type="submit" class="btn btn-warning btn-md button button_beli" id="daftar">
                         <span class="spinner-border text-light spinner-border-sm d-none" role="status" aria-hidden="true"></span>
@@ -78,7 +81,10 @@ function button_beli()
         // cek status transaksi, jika ada transaksi, maka jalankan transaksi
 
         if($status_transaksi == 0) {
-            $form .= '<div id="load"><form action="' . $url . '" method="POST" class="pendaftaran">';
+            $form .= '<div id="load">
+            <form action="' . $url . '" method="POST" class="pendaftaran p-3">
+            <h5 class="text-center">Beli Program Ini</h5>
+            <input type="hidden" name="url" id="url" class="" value="'. get_the_permalink() .'">';
             $form .= "<input type='hidden' name='submitted' value='add'>"; 
 
             $form .= '<div class="form-group row">
@@ -91,7 +97,7 @@ function button_beli()
             $form .= '<input type="hidden" name="harga" id="harga" value="' . get_field('harga', get_the_ID()) . '" />';
             $form .= '<input type="hidden" name="post_id" id="post_id" value="' . get_the_ID() . '" />'; 
             $form .= '<div class="form-group row mt-3">
-                    <label for="button" class="col-sm-4 col-form-label">&nbsp;</label>
+                    <label for="button" class="col-sm-4 col-form-label d-none d-sm-block">&nbsp;</label>
                     <div class="col-sm-8">
                         <button type="submit" class="btn btn-warning btn-md button button_beli" id="daftar">
                             <span class="spinner-border text-light spinner-border-sm d-none" role="status" aria-hidden="true"></span>
@@ -106,77 +112,143 @@ function button_beli()
             $form .= "</div>";
         } else {
 
-            $args = array(
-                'post_type'     => 'orders',
-                'post_status'   => 'pending',
-                'author'   => get_current_user_id(),
-                'meta_query'    => array (
-                    'key' => 'training',
-                    'value' => $post_id,
-                ),
-            );
-
-            $postslist = get_posts( $args );
-
-            foreach ($postslist as $post) {  
+            
+            foreach ($status_transaksi as $post) {  
+               
                 $jml_peserta = get_field('jml_peserta', $post->ID);  
-                $total_harga = get_field('total_harga', $post->ID);  
+                $harga_diskon = get_field('harga_diskon', $post->ID);  
+                $total_harga = ($harga_diskon != '') ? $harga_diskon : get_field('total_harga', $post->ID);  
+                $status_bayar = get_field('status_bayar', $post->ID);       
     
-              $nonce = wp_create_nonce( 'scajax_nonce' );
-            // $total_harga = $field["harga"]*$field["jml_peserta"];
-                $html = '';
-                $html .= '<div id="load"><h5>Selesaikan Pesanan Anda</h5>';
-                $html .= "<p>Masukkan Nama Peserta</p>";
-                $html .=  '<form action="" method="POST" class="form_checkout">';
-                $html .=  '<input type="hidden" name="nonce" value="'. $nonce .'">';
-                $html .=  '<input type="hidden" name="total_harga" id="total_harga" value="'. $total_harga .'">';
-                $html .=  '<input type="hidden" name="jml_peserta" id="jml_peserta" value="'. $jml_peserta .'">';
-                for ($i = 1; $i <= $jml_peserta; $i++) {
-                $html .= '<div class="mb-3 row">
-                        <label for="nama peserta" class="col-sm-4 col-form-label">Nama Peserta*</label>
-                        <div class="col-sm-8">
-                        <input type="text" name="peserta'.$i.'" class="form-control"  value="" required>
-                        <span class="invalid-feedback error peserta' . $i. '_empty d-block"></span>
+                $nonce = wp_create_nonce( 'scajax_nonce' );
+                // $total_harga = $field["harga"]*$field["jml_peserta"];
+                $html = '';               
+
+                if($status_bayar == 'tambah_peserta') {
+                    $html .= '<div id="load" class="p-3"><h5 class="text-center mb-3">Selesaikan Pesanan Anda</h5>';
+                    // $html .= "<p>Masukkan Nama Peserta</p>";
+                    $html .=  '<form action="" method="POST" class="form_checkout">';
+                    $html .=  '<input type="hidden" name="nonce" value="'. $nonce .'">';
+                    $html .=  '<input type="hidden" name="total_harga" id="total_harga" value="'. $total_harga .'">';
+                    $html .=  '<input type="hidden" name="jml_peserta" id="jml_peserta" value="'. $jml_peserta .'">';
+                    for ($i = 1; $i <= $jml_peserta; $i++) {
+                    $html .= '<div class="mb-2 row">
+                            <label for="nama peserta" class="col-sm-4 col-form-label">Nama Peserta '.$i.'*</label>
+                            <div class="col-sm-8">
+                            <input type="text" name="peserta'.$i.'" class="form-control"  value="" required>
+                            <span class="invalid-feedback error peserta' . $i. '_empty"></span>
+                            </div>
+                        </div>';
+                    }
+                    $html .='<div class="mb-2 row">
+                        <label for="nama peserta" class="col-sm-4 col-form-label">Punya kupon?</label>
+                        <div class="col-sm-8">    
+                        <div class="input-group mb-3">              
+                            <input type="text" class="form-control" name="coupon" id="kode_kupon" style="width:100px !important;">
+                            <span class="btn btn-info" style="border-top-right-radius:5px;border-bottom-right-radius:5px" type="button" id="cek_kupon">
+                            Cek Kupon</span>
+                            <span class="invalid-feedback message_kupon d-block" ></span>
+                        </div>
                         </div>
                     </div>';
-                }
-                $html .='<div class="mb-3 row">
-                    <label for="nama peserta" class="col-sm-4 col-form-label">Punya kupon?</label>
-                    <div class="col-sm-8">    
-                    <div class="input-group mb-3">              
-                        <input type="text" class="form-control" name="coupon" id="kode_kupon" style="width:100px !important;">
-                        <span class="btn btn-warning" type="button" id="cek_kupon">
-                        Cek Kupon</span>
-                        <span class="invalid-feedback message_kupon d-block" ></span>
-                    </div>
-                    </div>
-                </div>';
-        
-                $html .= "<p><strong>" . $post->post_title . "</strong><br>             
-                    Rp</span> " . number_format(get_field('harga', $post->ID)) . " x " . $jml_peserta . " = Rp <span class='harga_asli'><span class='tru'></span>" . number_format($total_harga) . "</span> &nbsp;<span class='harga_baru'></span>                      
-                </p>";
-                $html .= "<input type='hidden' id='training_id' name='training_id' value='". $post->ID ."'>";
-                $html .= "<input type='hidden' id='training_title' name='training_title' value='". $post->post_title ."'>";
-                $html .= "<input type='hidden' id='harga_diskon' name='harga_diskon' value=''>";
-                $html .= "<input type='hidden' name='submitted' value='checkout'>
-                    <hr style='border-top:1px solid white; padding:10px 0;'>
-                    <p><button type='submit' class='button button_beli btn btn-warning' id='button_checkout'>
-                        <span class='spinner-border text-light spinner-border-sm d-none' role='status' aria-hidden='true'></span>
-                            <span class='visually-hidden'>Loading...</span>
-                    Konfirmasi Pesanan</button></p>";  
-                $html .= "</form></div>"; 
-        
-                    echo $html;
-            }
+            
+                    $html .= "<p><strong>" . $post->post_title . "</strong><br>             
+                        Rp</span> " . number_format($total_harga) . " x " . $jml_peserta . " = Rp <span class='harga_asli'><span class='tru'></span>" . number_format($total_harga) . "</span> &nbsp;<span class='harga_baru'></span>                      
+                    </p>";
+                    $html .= "<input type='hidden' id='training_id' name='training_id' value='". $post->ID ."'>";
+                    $html .= "<input type='hidden' id='training_title' name='training_title' value='". $post->post_title ."'>";
+                    $html .= '<input type="hidden" name="url" id="url" class="" value="'. get_the_permalink() .'">';
+                    $html .= "<input type='hidden' id='harga_diskon' name='harga_diskon' value=''>";
+                    $html .= "<input type='hidden' name='submitted' value='checkout'>
+                        <hr style='border-top:1px solid white; padding:10px 0;'>
+                        <p><button type='submit' class='button button_beli btn btn-warning' id='button_checkout'>
+                            <span class='spinner-border text-light spinner-border-sm d-none' role='status' aria-hidden='true'></span>
+                                <span class='visually-hidden'>Loading...</span>
+                        Konfirmasi Pesanan</button></p>";  
+                    $html .= "</form></div>"; 
+                } else if($status_bayar == 'belum_bayar') { // status_bayar 
+
+                    $transaksi = array(
+                        'post_id' => $post->ID,
+                        'post_title' => $post->post_title,
+                        'total_harga' => $total_harga,
+                        'jml_peserta' => $jml_peserta,
+                    );
+
+                    $snapToken = get_midtrans($transaksi);
+
+                $html .= '<div id="bayar-midtranss" class="p-3"> 
+                <h5>Pesanan Anda</h5>
+                <p>Training : ' . $post->post_title . ' (' . $jml_peserta . ' peserta)</p>
+                <p>Rp: ' . number_format($total_harga) . '</p>
+                <button id="pay-button" class="btn btn-warning btn-lg btn-block">Bayar Sekarang</button>
+
+                <div id="bayar-sukses"></div>
+                <div id="result-json"></div>
+                ';
+                $html .= '
+                <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-NUHDTW6uipcvE7sz"> </script>
+                <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+                <script type="text/javascript"> 
+                $("#pay-button").on("click", function() {                 
+                    snap.pay("' . $snapToken . '", {
+                
+                        onSuccess: function(result){  
+                      
+                            $.ajax( {
+                                type : "post",
+                                dataType : "json",
+                                url : scajax_globals.ajax_url,
+                                data : {
+                                action: "transaksi",
+                                kode_transaksi : 200,
+                                result : result,
+                                order_id : ' . $post->ID . ',
+                                _ajax_nonce: scajax_globals.nonce
+                                },
+                                beforeSend: function ( xhr ) {
+                                console.log("Loading ...")                           
+                                
+                                },
+                                success: function( response ) {
+                                    if( "success" == response.type ) {
+                         
+                                        console.log(response)
+                                        $("#pay-button").hide();
+                                        $("#bayar-sukses").html("Terima kasih, pembayaran Anda berhasil.");
+                                    }
+                                    else {
+                                       alert( "Error" );
+                                    }
+                                 },                  
+                            });  
+
+                        },
+                        onPending: function(result) {
+                        document.getElementById("result-json").innerHTML += JSON.stringify(result, null, 2)
+                        alert("pending");
+                        },
+                        onError: function(result) {
+                        document.getElementById("result-json").innerHTML += JSON.stringify(result, null, 2)
+                        alert("gagal");
+                        }
+                    });
+
+                    
+                });    
+                     
+            </script></div>';
+                } elseif($status_bayar == 'lunas') {
+
+                    $html .= "<div class='d-block py-3 px-3'><span class='alert alert-warning'><i class='fas fa-exclamation-triangle'></i> Anda sudah terdaftar di program ini</span></div>";
+                    
+                }// belum bayar
+                echo $html;
+            } 
         }
     }
 
-    
- 
-    
-    return $form;
-
-   
+    return $form;   
 }
 
 /*-------- Login ----------*/
@@ -188,228 +260,6 @@ function login()
             <a class="loginheader" href="<?php echo esc_url(wp_login_url()); ?>" alt="Login">
                 Login
             </a><?php }
-}
-
-/*-------- Keranjang Belanja ----------*/
-add_shortcode('keranjang_belanja', 'keranjang_belanja');
-function keranjang_belanja()
-{
-
-    if (isset($_SESSION["cart_item"])) {
-        $total_training = count($_SESSION["cart_item"]);
-        echo '<a href="' . get_bloginfo('url') . '/keranjang"><p class="keranjang_belanja" data-badge="' . $total_training . '"><i data-feather="shopping-cart"></i></p></a>';
-    } else {
-        $total_training = 0;
-        echo '<a href="' . get_bloginfo('url') . '/keranjang"><p class="keranjang_belanja"><i data-feather="shopping-cart"></i></</p></a>';
-    }
-
-    // echo '<script>
-    // feather.replace({width: "1em", height: "1em"});    
-    // </script>';
-}
-
-/*-------- Hapus Sesi ----------*/
-add_shortcode('session_des', 'session_des');
-function session_des()
-{
-    myEndSession();
-    header('Location: ' . get_bloginfo('url') . '/keranjang');
-}
-
-/*-------- Halaman Keranjang ----------*/
-add_shortcode('keranjang', 'keranjang');
-function keranjang()
-{
-    ?>
-<div class="col-md-8 offset-md-2">
-
-    
-
-<?php
-
-    if (isset($_SESSION["cart_item"])) {     
-        $total_peserta = 0;
-        $total_harga = 0;
-        $url_checkout = get_bloginfo('url') . "/bayar";
-        $user = wp_get_current_user();
-
-        $totpeserta = count($_SESSION["cart_item"]);
-
-        if (is_user_logged_in()) {
-            $halo = 'Halo, ' .  $user->user_login . '. ';
-        } else {
-            $halo = '';
-        }
-
-        $cart = '';
-        
-       
-        $cart .= '<div class="accordion" id="accordionExample">';
-
-        $cart .= '<p>' . $halo . ' Anda memiliki ' . $totpeserta . ' order pada keranjang belanja. <a href="' . get_bloginfo('url') . '/kosongkan-keranjang" class="">Kosongkan Keranjang</a></p>';
-        $i = 0 ;
-        foreach ($_SESSION["cart_item"] as $key => $item) {
-
-            $subtotal = $item["jml_peserta"] * $item["harga"];
-            
-             $cart .= '<div class="accordion-item">
-             <h2 class="accordion-header" id="heading'.$i.'">
-               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse'.$i.'" aria-expanded="false" aria-controls="collapse'.$i.'">
-                 '. $item["judul"] .'
-               </button>
-             </h2>
-             <div id="collapse'.$i.'" class="accordion-collapse collapse" aria-labelledby="heading'.$i.'" data-bs-parent="#accordionExample">
-               <div class="accordion-body">';
-
-               $cart .=  '<form action="" method="POST" class="form_checkout">';
-            $cart .=  wp_nonce_field('post_nonce', 'post_nonce_field');    
-        
-            $cart .= "<p>Masukkan Nama Peserta</p>";
-                        for ($i = 1; $i <= $item["jml_peserta"]; $i++) {
-                            $cart .= "<p><input class='form-control' style='width:100%;' type='text' name='peserta".$i."' placeholder='Nama Peserta " . $i . "' required>                             
-                            <span class='error peserta" . $i. "_empty'></span></p>";
-                        }
-            $cart .= "Masukkan kode promo<br> <input class='form-control' style='width:20%;' type='text' name='coupon' id='kode_kupon'> <a class='button' style='width:30%;background:green;color:white;' id='cek_kupon'>Cek Kupon</a> 
-            <p class='message_kupon' style='padding:5px 0;color:#fbff00; text-align:left;'></p>";            
-            $cart .= "<input type='hidden' name='order_id' value='" . session_id() . "'>";
-            $cart .= "<input type='hidden' name='harga' value='" . $item["harga"] . "'>";
-            $cart .= "<input type='hidden' name='training_id' value='" . $key . "'>";
-            $cart .= "<input type='hidden' name='training_title' value='" . $item["judul"] . "'>";
-            $cart .= "<input type='hidden' id='total_harga' name='total_harga' value='" . $subtotal . "'>";
-            $cart .= "<input type='hidden' id='harga_diskon' name='harga_diskon' value=''>";
-            $cart .= "<input type='hidden' name='jml_peserta' value='" . $item["jml_peserta"] . "'>";
-
-            $cart .= "<p><strong>" . $item["judul"] . "</strong><br>             
-            Rp</span> " . number_format($item["harga"]) . " x " . $item["jml_peserta"] . " = Rp <span class='harga_asli'><span class='tru'></span>" . number_format($subtotal) . "</span> &nbsp;<span class='harga_baru'></span>                      
-           </p>";
-            $cart .= "<input type='hidden' name='submitted' value='checkout'>
-            <hr style='border-top:1px solid white; padding:10px 0;'>
-            <p><button type='submit' class='button button_beli' id='button_checkout'>Konfirmasi Transaksi</button></p>";  
-            $cart .= "</form>"; 
-                
-            $cart .= '</div>
-             </div>
-           </div>';
-                    
-        $i++;
-        
-        }
-        $cart .='</div>';      
-
-        echo $cart;
-        
-        ?>
-
-            <div id='bayar-midtrans'>
-                <h3>BayarMIdtrans</h3>
-                <?php panggil_midtrans(); ?>
-            </div>
-
-    <?php 
-    } else {
-        echo "<p>Keranjang belanja Anda kosong.</p>";
-    } ?>
-
-
-</div>
-    <?php
-    
-}
-
-/*-------- bayar ----------*
-add_shortcode('bayar', 'bayar');
-function bayar()
-{
-    
-    // $user = wp_get_current_user();
-
-    // echo '<pre>'; print_r($user); echo '</pre>';
-
-    // $umeta = get_user_meta($user->ID, "telp", TRUE);
-
-    $training_id = isset($_GET['training_id']) ? $_GET['training_id'] : '';
-
-    if ($training_id != '') {
-        
-        if(isset($_SESSION["cart_item"][$training_id])) {
-            $url_checkout = get_bloginfo('url') . "/proses-bayar";
-
-            $jml_peserta = $_SESSION["cart_item"][$training_id]["jml_peserta"];
-            $harga = $_SESSION["cart_item"][$training_id]["harga"];
-            $total_harga = $jml_peserta * $harga;
-            $cart = '';
-
-        // $cart .= '<h5><strong>Pesanan Anda</strong></h5>';
-
-        $cart .= "<div class='container'> 
-                   <div class='row' style='background:#0d7d76;'>
-                    <div class='col-8'><strong>" . $_SESSION["cart_item"][$training_id]["judul"] . "</strong></div> 
-                    <div class='col-4'>
-                    Rp</span> " . number_format($harga, 2) . " x " . $jml_peserta . " = Rp " . number_format($total_harga, 2) . "
-                    </div>
-                </div>
-            </div><!-- .container -->
-        ";
-
-        $cart .= "<br>
-            <div class='container'>               
-                <div class='row'>";
-                    $cart .= "<div class='col-6'>";
-                    // $cart .=  "is login";
-                    if (is_user_logged_in()) {
-
-                        $cart .= "<form action='" . $url_checkout . "' method='post'>";
-                        $cart .=  wp_nonce_field('post_nonce', 'post_nonce_field');
-
-                        $cart .= "<p><strong>Masukkan Peserta</strong></p>";
-                        for ($i = 1; $i <= $jml_peserta; $i++) {
-                            $cart .= "<p><input class='form-control' style='width:100%;' type='text' name='peserta[]' placeholder='Nama Peserta " . $i . "' required> </p>";
-                        }
-
-                        $cart .= "<p>Masukkan kode promo <input class='form-control' style='width:20%;' type='text' name='coupon' id='kode_kupon' value='XYZ5'> <a class='button' style='width:30%;background:green;' id='cek_kupon'>Cek Kupon</a> </p>";
-
-                        $cart .= "<input type='hidden' name='training_title' value='" . $_SESSION["cart_item"][$training_id]["judul"] . "'>";
-                        $cart .= "<input type='hidden' name='training_id' value='" . $training_id . "'>";
-                        $cart .= "<input type='hidden' name='total_harga' value='" . $total_harga . "'>";
-                        $cart .= "<input type='hidden' name='harga' value='" . $harga . "'>";
-                        $cart .= "<input type='hidden' name='jml_peserta' value='" . $jml_peserta . "'>";
-
-                        $cart .= "<input type='hidden' name='submitted' value='bayar'>
-                                    <p><button type='submit' class='button button_checkout'>Lanjut ke Pembayaran</button></p>";
-                        $cart .= "</form>";
-                    }
-
-                $cart .= '</div><!-- .col-6 -->';
-        $cart .= '<div class="col-6">';
-              
-
-        $cart .= '</div><!-- .col-6 -->';
-
-        $cart .= '</div><!-- .row -->
-                </div> <!--.container -->';
-        echo $cart;
-        } else {
-            echo "Sesi telah habis";
-            $url = get_bloginfo('url');
-            echo("<script>location.href = '".$url."';</script>");
-        }
-        
-
-    } else {
-        echo "kenapa eror";
-        ob_start();
-        wp_redirect(get_bloginfo('url') . '/keranjang');exit;
-    }
-
-
-
-    echo '<script>
-    feather.replace();    
-    if ( window.history.replaceState ) {
-        window.history.replaceState( null, null, window.location.href );
-    }
-    </script>';   
-
 }
 
 /*-------- Tanggal ----------*/
@@ -549,22 +399,30 @@ function harga()
     return number_format($harga);
 }
 
-function status_transaksi($user_id, $post_id) {
+function status_transaksi($user_id, $post_id) {    
     $args = array(
         'post_type'     => 'orders',
         'post_status'   => 'pending',
         'author'   => $user_id,
-        'meta_query'    => array (
-            'key' => 'training',
-            'value' => $post_id,
+        'meta_query'    => array(
+            'compare' => 'AND',
+            array (
+                'key' => 'training',
+                'value' => $post_id,
+                'compare' => '=',
+            ),           
         ),
     );
 
     $postslist = get_posts( $args );
 
-    if($postslist) {
-        return 1;
+    if($postslist) {      
+
+        return $postslist;
+
     } else {
+
         return 0;
+        // echo "gada transaksi";
     }
 }
