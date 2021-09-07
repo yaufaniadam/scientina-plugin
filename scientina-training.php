@@ -1,7 +1,7 @@
 <?php
 /*
    Plugin Name: Scientina Training
-   Version: 1.0.0
+   Version: 1.0.1
    Author: Yaufani Adam
    Author URI: https://solusdesain.net
    Description: Plugin
